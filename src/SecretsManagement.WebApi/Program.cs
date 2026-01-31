@@ -28,12 +28,17 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseHttpsRedirection();
 
-app.MapGet("/secrets/{name}", async (string name, ISecretProvider secretProvider, CancellationToken cancellationToken) =>
+app.MapGet("/secrets/{name}", async (string name, ISecretProvider secretProvider, HttpContext context, CancellationToken cancellationToken) =>
 {
     string? secret = await secretProvider.GetSecretAsync(name, cancellationToken);
-    return string.IsNullOrWhiteSpace(secret)
-        ? Results.NotFound("Secret not found.")
-        : Results.Ok(secret);
+    if (string.IsNullOrWhiteSpace(secret))
+    {
+        return Results.NotFound("Secret not found.");
+    }
+
+    context.Response.Headers.CacheControl = "no-store, no-cache";
+    context.Response.Headers.Pragma = "no-cache";
+    return Results.Text(secret, "text/plain");
 })
 .WithName("GetSecret")
 .WithTags("Secrets")
