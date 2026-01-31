@@ -8,11 +8,13 @@ if (string.IsNullOrWhiteSpace(vaultUri))
 {
     throw new InvalidOperationException("KeyVault:VaultUri configuration is required.");
 }
+builder.Services.AddAuthorization();
 builder.Services.AddSingleton<ISecretProvider>(sp =>
     new AzureKeyVaultSecretProvider(vaultUri));
 
 var app = builder.Build();
 
+app.UseAuthorization();
 app.UseHttpsRedirection();
 
 app.MapGet("/secrets/{name}", async (string name, ISecretProvider secretProvider, CancellationToken cancellationToken) =>
@@ -23,6 +25,7 @@ app.MapGet("/secrets/{name}", async (string name, ISecretProvider secretProvider
         : Results.Ok(secret);
 })
 .WithName("GetSecret")
-.WithTags("Secrets");
+.WithTags("Secrets")
+.RequireAuthorization();
 
 app.Run();

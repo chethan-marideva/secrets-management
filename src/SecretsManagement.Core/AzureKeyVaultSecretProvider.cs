@@ -16,7 +16,7 @@ namespace SecretsManagement.Core
         {
             if (string.IsNullOrWhiteSpace(vaultUri))
             {
-                throw new ArgumentException("KeyVault:VaultUri configuration is required.", nameof(vaultUri));
+                throw new ArgumentException("Vault URI is required.", nameof(vaultUri));
             }
 
             _vaultUri = vaultUri!;
@@ -48,7 +48,7 @@ namespace SecretsManagement.Core
         {
             if (!Uri.TryCreate(_vaultUri, UriKind.Absolute, out Uri? vaultUri))
             {
-                throw new InvalidOperationException("KeyVault:VaultUri must be an absolute URI.");
+                throw new InvalidOperationException("Vault URI must be an absolute URI.");
             }
 
             return new SecretClient(vaultUri, new DefaultAzureCredential());
