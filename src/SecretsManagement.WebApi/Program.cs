@@ -3,8 +3,13 @@ using SecretsManagement.Core;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
+string? vaultUri = builder.Configuration["KeyVault:VaultUri"];
+if (string.IsNullOrWhiteSpace(vaultUri))
+{
+    throw new InvalidOperationException("KeyVault:VaultUri configuration is required.");
+}
 builder.Services.AddSingleton<ISecretProvider>(sp =>
-    new AzureKeyVaultSecretProvider(sp.GetRequiredService<IConfiguration>()["KeyVault:VaultUri"]));
+    new AzureKeyVaultSecretProvider(vaultUri));
 
 var app = builder.Build();
 

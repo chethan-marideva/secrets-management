@@ -10,11 +10,12 @@ namespace SecretsManagement.Core
     public class AzureKeyVaultSecretProvider : ISecretProvider
     {
         private readonly string? _vaultUri;
-        private SecretClient? _secretClient;
+        private readonly Lazy<SecretClient> _secretClient;
 
         public AzureKeyVaultSecretProvider(string? vaultUri)
         {
             _vaultUri = vaultUri;
+            _secretClient = new Lazy<SecretClient>(CreateSecretClient, LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
         public async Task<string?> GetSecretAsync(string name, CancellationToken cancellationToken)
@@ -24,7 +25,7 @@ namespace SecretsManagement.Core
                 throw new ArgumentException("Secret name is required.", nameof(name));
             }
 
-            SecretClient secretClient = GetSecretClient();
+            SecretClient secretClient = _secretClient.Value;
 
             try
             {
@@ -38,14 +39,19 @@ namespace SecretsManagement.Core
             }
         }
 
-        private SecretClient GetSecretClient()
+        private SecretClient CreateSecretClient()
         {
             if (string.IsNullOrWhiteSpace(_vaultUri))
             {
                 throw new InvalidOperationException("KeyVault:VaultUri configuration is required.");
             }
 
-            return _secretClient ??= new SecretClient(new Uri(_vaultUri, UriKind.Absolute), new DefaultAzureCredential());
+            if (!Uri.TryCreate(_vaultUri, UriKind.Absolute, out Uri? vaultUri))
+            {
+                throw new InvalidOperationException("KeyVault:VaultUri must be an absolute URI.");
+            }
+
+            return new SecretClient(vaultUri, new DefaultAzureCredential());
         }
     }
 }

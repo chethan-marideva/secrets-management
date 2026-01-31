@@ -20,4 +20,6 @@ Run the API and request a secret by name:
 GET /secrets/{name}
 ```
 
+The endpoint returns the secret value in plain text. Ensure the API is protected with appropriate authentication/authorization and transport security.
+
 The endpoint uses `DefaultAzureCredential`, so ensure your environment is authenticated with Azure (for example, `az login` or managed identity).
