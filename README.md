@@ -9,6 +9,7 @@ This repository includes a reusable Key Vault secret provider library and a .NET
 Set the Key Vault URI in the Web API configuration:
 
 - `KeyVault:VaultUri` - the URI of your Azure Key Vault, for example `https://your-vault-name.vault.azure.net/`.
+- `Authentication:ApiKey` - API key required for requests (sent as `X-Api-Key`).
 
 You can configure this in `appsettings.Development.json` or via environment variables.
 
@@ -18,8 +19,9 @@ Run the API and request a secret by name:
 
 ```
 GET /secrets/{name}
+X-Api-Key: <api-key>
 ```
 
-The endpoint returns the secret value in plain text and requires authorization by default. Configure authentication/authorization and transport security before exposing it beyond trusted networks.
+The endpoint returns the secret value in plain text and requires an API key. Configure transport security before exposing it beyond trusted networks.
 
 The endpoint uses `DefaultAzureCredential`, so ensure your environment is authenticated with Azure (for example, `az login` or managed identity).

@@ -38,9 +38,17 @@ namespace SecretsManagement.Core
                     .ConfigureAwait(false);
                 return response.Value.Value;
             }
+            catch (AuthenticationFailedException ex)
+            {
+                throw new InvalidOperationException("Failed to authenticate to Key Vault.", ex);
+            }
             catch (RequestFailedException ex) when (ex.Status == 404)
             {
                 return null;
+            }
+            catch (RequestFailedException ex)
+            {
+                throw new InvalidOperationException("Failed to retrieve secret from Key Vault.", ex);
             }
         }
 

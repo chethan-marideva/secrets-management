@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authentication;
 using SecretsManagement.Core;
+using SecretsManagement.WebApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,12 +10,16 @@ if (string.IsNullOrWhiteSpace(vaultUri))
 {
     throw new InvalidOperationException("KeyVault:VaultUri configuration is required.");
 }
+builder.Services.AddAuthentication(ApiKeyAuthenticationHandler.SchemeName)
+    .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationHandler.SchemeName,
+        options => options.ApiKey = builder.Configuration["Authentication:ApiKey"]);
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<ISecretProvider>(sp =>
     new AzureKeyVaultSecretProvider(vaultUri));
 
 var app = builder.Build();
 
+app.UseAuthentication();
 app.UseAuthorization();
 app.UseHttpsRedirection();
 
