@@ -11,13 +11,18 @@ if (string.IsNullOrWhiteSpace(vaultUri))
     throw new InvalidOperationException("KeyVault:VaultUri configuration is required.");
 }
 string? apiKey = builder.Configuration["Authentication:ApiKey"];
-if (string.IsNullOrWhiteSpace(apiKey))
+if (string.IsNullOrWhiteSpace(apiKey) && !builder.Environment.IsDevelopment())
 {
     throw new InvalidOperationException("Authentication:ApiKey configuration is required.");
 }
 builder.Services.AddAuthentication(ApiKeyAuthenticationHandler.SchemeName)
     .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationHandler.SchemeName,
-        options => options.ApiKey = apiKey);
+        options =>
+        {
+            options.ApiKey = builder.Environment.IsDevelopment()
+                ? (apiKey ?? Guid.NewGuid().ToString("N"))
+                : apiKey;
+        });
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<ISecretProvider>(sp =>
     new AzureKeyVaultSecretProvider(vaultUri));
@@ -41,8 +46,9 @@ app.MapGet("/secrets/{name}", async (string name, ISecretProvider secretProvider
         return Results.NotFound("Secret not found.");
     }
 
-    context.Response.Headers.CacheControl = "no-store, no-cache";
+    context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
     context.Response.Headers.Pragma = "no-cache";
+    context.Response.Headers.Expires = "0";
     return Results.Text(secret, "text/plain");
 })
 .WithName("GetSecret")
