@@ -19,7 +19,12 @@ namespace SecretsManagement.Core
                 throw new ArgumentException("Vault URI is required.", nameof(vaultUri));
             }
 
-            _vaultUri = vaultUri!;
+            if (!Uri.TryCreate(vaultUri, UriKind.Absolute, out Uri? parsedVaultUri))
+            {
+                throw new ArgumentException("Vault URI must be an absolute URI.", nameof(vaultUri));
+            }
+
+            _vaultUri = parsedVaultUri.ToString();
             _secretClient = new Lazy<SecretClient>(CreateSecretClient, LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
@@ -54,10 +59,7 @@ namespace SecretsManagement.Core
 
         private SecretClient CreateSecretClient()
         {
-            if (!Uri.TryCreate(_vaultUri, UriKind.Absolute, out Uri? vaultUri))
-            {
-                throw new InvalidOperationException("Vault URI must be an absolute URI.");
-            }
+            Uri vaultUri = new Uri(_vaultUri, UriKind.Absolute);
 
             return new SecretClient(vaultUri, new DefaultAzureCredential());
         }
