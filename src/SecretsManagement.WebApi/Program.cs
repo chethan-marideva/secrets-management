@@ -11,18 +11,19 @@ if (string.IsNullOrWhiteSpace(vaultUri))
     throw new InvalidOperationException("KeyVault:VaultUri configuration is required.");
 }
 string? apiKey = builder.Configuration["Authentication:ApiKey"];
-if (string.IsNullOrWhiteSpace(apiKey) && !builder.Environment.IsDevelopment())
+string? configuredApiKey = apiKey;
+if (builder.Environment.IsDevelopment() && string.IsNullOrWhiteSpace(configuredApiKey))
+{
+    configuredApiKey = Guid.NewGuid().ToString("N");
+    Console.WriteLine($"Generated development API key: {configuredApiKey}");
+}
+if (string.IsNullOrWhiteSpace(configuredApiKey))
 {
     throw new InvalidOperationException("Authentication:ApiKey configuration is required.");
 }
 builder.Services.AddAuthentication(ApiKeyAuthenticationHandler.SchemeName)
     .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationHandler.SchemeName,
-        options =>
-        {
-            options.ApiKey = builder.Environment.IsDevelopment()
-                ? (apiKey ?? Guid.NewGuid().ToString("N"))
-                : apiKey;
-        });
+        options => options.ApiKey = configuredApiKey);
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<ISecretProvider>(sp =>
     new AzureKeyVaultSecretProvider(vaultUri));
