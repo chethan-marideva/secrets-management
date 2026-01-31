@@ -9,7 +9,7 @@ namespace SecretsManagement.Core
 {
     public class AzureKeyVaultSecretProvider : ISecretProvider
     {
-        private readonly string? _vaultUri;
+        private readonly string _vaultUri;
         private readonly Lazy<SecretClient> _secretClient;
 
         public AzureKeyVaultSecretProvider(string? vaultUri)
@@ -19,7 +19,7 @@ namespace SecretsManagement.Core
                 throw new ArgumentException("KeyVault:VaultUri configuration is required.", nameof(vaultUri));
             }
 
-            _vaultUri = vaultUri;
+            _vaultUri = vaultUri!;
             _secretClient = new Lazy<SecretClient>(CreateSecretClient, LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
