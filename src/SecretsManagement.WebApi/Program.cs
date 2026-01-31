@@ -1,0 +1,59 @@
+using Microsoft.AspNetCore.Authentication;
+using SecretsManagement.Core;
+using SecretsManagement.WebApi;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddEndpointsApiExplorer();
+string? vaultUri = builder.Configuration["KeyVault:VaultUri"];
+if (string.IsNullOrWhiteSpace(vaultUri))
+{
+    throw new InvalidOperationException("KeyVault:VaultUri configuration is required.");
+}
+string? apiKey = builder.Configuration["Authentication:ApiKey"];
+string? configuredApiKey = apiKey;
+if (builder.Environment.IsDevelopment() && string.IsNullOrWhiteSpace(configuredApiKey))
+{
+    configuredApiKey = Guid.NewGuid().ToString("N");
+    Console.WriteLine($"Generated development API key: {configuredApiKey}");
+}
+if (string.IsNullOrWhiteSpace(configuredApiKey))
+{
+    throw new InvalidOperationException("Authentication:ApiKey configuration is required.");
+}
+builder.Services.AddAuthentication(ApiKeyAuthenticationHandler.SchemeName)
+    .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationHandler.SchemeName,
+        options => options.ApiKey = configuredApiKey);
+builder.Services.AddAuthorization();
+builder.Services.AddSingleton<ISecretProvider>(sp =>
+    new AzureKeyVaultSecretProvider(vaultUri));
+
+var app = builder.Build();
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseHttpsRedirection();
+
+app.MapGet("/secrets/{name}", async (string name, ISecretProvider secretProvider, HttpContext context, CancellationToken cancellationToken) =>
+{
+    if (string.IsNullOrWhiteSpace(name) || name.Length > 127 || !name.All(ch => char.IsLetterOrDigit(ch) || ch == '-'))
+    {
+        return Results.BadRequest("Secret name must be 1-127 characters and contain only letters, digits, or hyphens.");
+    }
+
+    string? secret = await secretProvider.GetSecretAsync(name, cancellationToken);
+    if (string.IsNullOrWhiteSpace(secret))
+    {
+        return Results.NotFound("Secret not found.");
+    }
+
+    context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
+    context.Response.Headers.Pragma = "no-cache";
+    context.Response.Headers.Expires = "0";
+    return Results.Text(secret, "text/plain");
+})
+.WithName("GetSecret")
+.WithTags("Secrets")
+.RequireAuthorization();
+
+app.Run();
