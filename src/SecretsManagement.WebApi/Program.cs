@@ -30,6 +30,11 @@ app.UseHttpsRedirection();
 
 app.MapGet("/secrets/{name}", async (string name, ISecretProvider secretProvider, HttpContext context, CancellationToken cancellationToken) =>
 {
+    if (string.IsNullOrWhiteSpace(name) || name.Length > 127 || !name.All(ch => char.IsLetterOrDigit(ch) || ch == '-'))
+    {
+        return Results.BadRequest("Secret name must be 1-127 characters and contain only letters, digits, or hyphens.");
+    }
+
     string? secret = await secretProvider.GetSecretAsync(name, cancellationToken);
     if (string.IsNullOrWhiteSpace(secret))
     {

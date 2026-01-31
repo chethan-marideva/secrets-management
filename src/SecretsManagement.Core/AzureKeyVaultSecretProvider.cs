@@ -45,7 +45,7 @@ namespace SecretsManagement.Core
             }
             catch (AuthenticationFailedException ex)
             {
-                throw new InvalidOperationException("Failed to authenticate to Key Vault.", ex);
+                throw new InvalidOperationException("Failed to authenticate to Key Vault. Verify DefaultAzureCredential configuration.", ex);
             }
             catch (RequestFailedException ex) when (ex.Status == 404)
             {
@@ -53,7 +53,7 @@ namespace SecretsManagement.Core
             }
             catch (RequestFailedException ex)
             {
-                throw new InvalidOperationException("Failed to retrieve secret from Key Vault.", ex);
+                throw new InvalidOperationException($"Failed to retrieve secret '{name}' from Key Vault (status {ex.Status}).", ex);
             }
         }
 
