@@ -1,5 +1,7 @@
 using System;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
@@ -33,7 +35,11 @@ namespace SecretsManagement.WebApi
                 return Task.FromResult(AuthenticateResult.NoResult());
             }
 
-            if (!string.Equals(providedKey.ToString(), Options.ApiKey, StringComparison.Ordinal))
+            byte[] providedKeyBytes = Encoding.UTF8.GetBytes(providedKey.ToString());
+            byte[] expectedKeyBytes = Encoding.UTF8.GetBytes(Options.ApiKey);
+
+            if (providedKeyBytes.Length != expectedKeyBytes.Length ||
+                !CryptographicOperations.FixedTimeEquals(providedKeyBytes, expectedKeyBytes))
             {
                 return Task.FromResult(AuthenticateResult.Fail("Invalid API key."));
             }

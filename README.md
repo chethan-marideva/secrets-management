@@ -22,6 +22,6 @@ GET /secrets/{name}
 X-Api-Key: <api-key>
 ```
 
-The endpoint returns the secret value in plain text and requires an API key. Configure transport security before exposing it beyond trusted networks.
+The endpoint returns the secret value in plain text and requires an API key. Use it only in trusted environments and protect it with TLS plus restricted network access.
 
 The endpoint uses `DefaultAzureCredential`, so ensure your environment is authenticated with Azure (for example, `az login` or managed identity).
