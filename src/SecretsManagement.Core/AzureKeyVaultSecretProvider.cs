@@ -14,6 +14,11 @@ namespace SecretsManagement.Core
 
         public AzureKeyVaultSecretProvider(string? vaultUri)
         {
+            if (string.IsNullOrWhiteSpace(vaultUri))
+            {
+                throw new ArgumentException("KeyVault:VaultUri configuration is required.", nameof(vaultUri));
+            }
+
             _vaultUri = vaultUri;
             _secretClient = new Lazy<SecretClient>(CreateSecretClient, LazyThreadSafetyMode.ExecutionAndPublication);
         }
@@ -41,11 +46,6 @@ namespace SecretsManagement.Core
 
         private SecretClient CreateSecretClient()
         {
-            if (string.IsNullOrWhiteSpace(_vaultUri))
-            {
-                throw new InvalidOperationException("KeyVault:VaultUri configuration is required.");
-            }
-
             if (!Uri.TryCreate(_vaultUri, UriKind.Absolute, out Uri? vaultUri))
             {
                 throw new InvalidOperationException("KeyVault:VaultUri must be an absolute URI.");
